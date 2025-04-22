@@ -1,0 +1,97 @@
+name: 'Feature Request'
+description: 'Suggest an idea or enhancement for Gland'
+labels: ['enhancement', 'needs triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Feature Request
+
+        Thank you for suggesting an enhancement for Gland. We value your input in making our event system better.
+
+        Before submitting your feature request, please:
+        - Check existing issues to see if your idea has already been proposed
+        - Consider if your idea aligns with Gland's event-driven architecture and philosophy
+
+  - type: checkboxes
+    attributes:
+      label: 'Prerequisites'
+      description: "Please confirm you've completed the following"
+      options:
+        - label: 'I have searched for similar feature requests'
+          required: true
+        - label: "I have read the documentation to confirm this feature doesn't already exist"
+          required: true
+
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: 'Problem Statement'
+      description: 'Is your feature request related to a problem? Please describe.'
+      placeholder: "I'm trying to accomplish X, but there's no way to do it because..."
+
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: 'Proposed Solution'
+      description: "Describe the solution you'd like to see implemented"
+      placeholder: 'I would like Gland to...'
+
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: 'Use Cases'
+      description: 'Describe specific use cases this feature would enable'
+      placeholder: 'This feature would allow developers to...'
+
+  - type: textarea
+    attributes:
+      label: 'Alternatives Considered'
+      description: "Describe any alternative solutions or features you've considered"
+      placeholder: "I've tried working around this by..."
+
+  - type: textarea
+    attributes:
+      label: 'Example Implementation'
+      description: 'If you can, provide a conceptual example of how you envision this feature working'
+      value: |
+        ```typescript
+        // Conceptual example
+        ```
+
+  - type: dropdown
+    attributes:
+      label: 'Feature Category'
+      description: 'What area of Gland would this feature affect?'
+      multiple: true
+      options:
+        - 'Core API'
+        - 'Event System'
+        - 'Broker Functionality'
+        - 'Channel System'
+        - 'Event Routing'
+        - 'Wildcards & Namespaces'
+        - 'Event Connections'
+        - 'TypeScript Types'
+        - 'Performance'
+        - 'Developer Experience'
+        - 'Documentation'
+        - 'Other'
+
+  - type: dropdown
+    attributes:
+      label: 'Priority'
+      description: 'How would you categorize the importance of this feature?'
+      options:
+        - 'Critical (blocking my usage of Gland)'
+        - 'High (would significantly enhance my use case)'
+        - 'Medium (would be a valuable addition)'
+        - 'Low (would be nice to have)'
+
+  - type: textarea
+    attributes:
+      label: 'Additional Context'
+      description: 'Add any other context or examples about the feature request here'

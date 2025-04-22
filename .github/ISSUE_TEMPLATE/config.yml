@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://glandjs.github.io/docs
+    about: 'Please check the documentation before opening an issue.'
+  - name: Support Questions
+    url: https://stackoverflow.com/questions/tagged/gland
+    about: 'For general support questions, please use Stack Overflow with the gland tag.'
+  - name: Community Discussions
+    url: https://github.com/glandjs/discussions
+    about: 'For feature discussions, ideas, and general feedback, use GitHub Discussions.'
+  - name: Security Issues
+    url: https://github.com/glandjs/events/security/policy
+    about: 'Please report security vulnerabilities directly through our security policy.'

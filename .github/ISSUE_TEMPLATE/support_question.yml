@@ -1,0 +1,93 @@
+name: 'Support Question'
+description: 'Ask a question about using Gland'
+labels: ['question', 'support']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Support Question
+
+        This template is for questions about using Gland that are not bugs or feature requests.
+
+        Please note that GitHub issues are primarily intended for bug reports and feature requests. For general support questions, consider:
+
+        - Checking the documentation first
+        - Using Stack Overflow with the 'gland' tag
+        - Joining the community discussion forums
+
+        If you still need to ask a question here, please provide as much context as possible to help us give you the best answer.
+
+  - type: dropdown
+    validations:
+      required: true
+    attributes:
+      label: 'Question Category'
+      description: 'What category does your question fall into?'
+      options:
+        - 'How to use a specific feature'
+        - 'Best practices'
+        - 'Performance optimization'
+        - 'API usage'
+        - 'Integration with other libraries'
+        - 'TypeScript types'
+        - 'Configuration'
+        - 'Migration'
+        - 'Other'
+
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: 'Question'
+      description: 'Please describe your question in detail'
+      placeholder: 'I am trying to understand how to... / What is the best way to...'
+
+  - type: textarea
+    attributes:
+      label: 'Context'
+      description: 'Provide any relevant context for your question'
+      placeholder: 'I am building an application that...'
+
+  - type: textarea
+    attributes:
+      label: 'What I Have Tried'
+      description: 'Describe what you have already tried to solve your problem'
+      placeholder: 'I have looked at the documentation and tried...'
+
+  - type: textarea
+    attributes:
+      label: 'Code Example'
+      description: 'If applicable, provide a code example related to your question'
+      value: |
+        ```typescript
+        // Your code here
+        ```
+
+  - type: input
+    validations:
+      required: true
+    attributes:
+      label: 'Gland Version'
+      description: 'What version of Gland are you using?'
+      placeholder: 'e.g., 1.0.0'
+
+  - type: input
+    attributes:
+      label: 'Node.js Version'
+      description: 'What version of Node.js are you using?'
+      placeholder: 'e.g., 16.13.0'
+
+  - type: input
+    attributes:
+      label: 'TypeScript Version'
+      description: 'If applicable, what version of TypeScript are you using?'
+      placeholder: 'e.g., 4.5.4'
+
+  - type: checkboxes
+    attributes:
+      label: 'Acknowledgment'
+      options:
+        - label: 'I understand that this is a question and not a bug report or feature request'
+          required: true
+        - label: 'I have checked the documentation and existing issues for an answer to my question'
+          required: true

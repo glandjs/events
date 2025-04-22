@@ -1,0 +1,11 @@
+# dependencies
+node_modules/
+
+# bundle
+src/**/**/*.d.ts
+src/**/**/*.js
+
+# misc
+.DS_Store
+.idea/
+.vscode/

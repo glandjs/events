@@ -1,0 +1,43 @@
+{
+  "name": "@glandjs/events",
+  "version": "1.0.1-alpha",
+  "description": "A fast, zero‑dependency event broker and message bus for building scalable, event‑driven applications.",
+  "type": "module",
+  "module": "dist/index",
+  "homepage": "https://github.com/glandjs/events#readme",
+  "author": "Mahdi <bitsgenix@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/glandjs/events.git"
+  },
+  "bugs": {
+    "url": "https://github.com/glandjs/events/issues"
+  },
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18",
+    "typescript": ">=5"
+  },
+  "scripts": {
+    "build": "",
+    "lint": "",
+    "test": "",
+    "typecheck": ""
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "glandjs",
+    "event",
+    "event-broker",
+    "event-emitter",
+    "message-bus",
+    "eds",
+    "typescript"
+  ],
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}
