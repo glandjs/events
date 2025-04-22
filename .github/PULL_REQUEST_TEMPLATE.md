@@ -35,7 +35,7 @@ Please link any related issues or provide issue numbers (e.g., `Fixes #123`).
 - [ ] I have updated any relevant documentation or added new documentation if necessary.
 - [ ] My changes don't introduce new warnings or errors.
 - [ ] I have updated the examples if applicable.
-- [ ] I have confirmed that my branch is up-to-date with the base branch (usually `main`).
+- [ ] I have confirmed that my branch is up-to-date with the base branch (`main`).
 
 ### Breaking Changes
 
