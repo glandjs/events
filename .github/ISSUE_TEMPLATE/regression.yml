@@ -63,16 +63,10 @@ body:
         3. Dispatch event Z
         4. Observe the incorrect behavior
 
-  - type: input
-    attributes:
-      label: 'Reproduction Link'
-      description: 'Link to a minimal repository that demonstrates the regression'
-      placeholder: 'https://github.com/username/repo'
-
   - type: textarea
     attributes:
       label: 'Minimal Code Example'
-      description: 'If you cannot create a reproduction repository, please provide the smallest code sample that demonstrates the issue'
+      description: 'please provide the smallest code sample that demonstrates the issue'
       value: |
         ```typescript
         // Code that works in previous version but fails in current version
@@ -111,9 +105,6 @@ body:
       value: |
         - Gland Version (previous):
         - Gland Version (current):
-        - Node.js Version:
-        - TypeScript Version (if applicable):
-        - Operating System:
 
   - type: textarea
     attributes:

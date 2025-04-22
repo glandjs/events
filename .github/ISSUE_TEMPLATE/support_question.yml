@@ -71,18 +71,6 @@ body:
       description: 'What version of Gland are you using?'
       placeholder: 'e.g., 1.0.0'
 
-  - type: input
-    attributes:
-      label: 'Node.js Version'
-      description: 'What version of Node.js are you using?'
-      placeholder: 'e.g., 16.13.0'
-
-  - type: input
-    attributes:
-      label: 'TypeScript Version'
-      description: 'If applicable, what version of TypeScript are you using?'
-      placeholder: 'e.g., 4.5.4'
-
   - type: checkboxes
     attributes:
       label: 'Acknowledgment'

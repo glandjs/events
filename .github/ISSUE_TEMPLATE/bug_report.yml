@@ -41,26 +41,10 @@ body:
       description: 'A clear description of what you expected to happen'
       placeholder: 'I expected the framework to...'
 
-  - type: input
-    attributes:
-      label: 'Reproduction Link'
-      description: 'A link to a minimal repository that reproduces the issue'
-      placeholder: 'https://github.com/username/repo'
-
   - type: textarea
     attributes:
-      label: 'Steps to Reproduce'
-      description: 'Step-by-step instructions to reproduce the behavior'
-      placeholder: |
-        1. Initialize Gland with config '...'
-        2. Set up event '...'
-        3. Trigger event '...'
-        4. See error '...'
-
-  - type: textarea
-    attributes:
-      label: 'Minimal Code Example'
-      description: 'If you cannot create a reproduction repository, please provide the smallest code sample that demonstrates the issue'
+      label: 'Code Example'
+      description: 'please provide the smallest code sample that demonstrates the issue'
       value: |
         ```typescript
         // Your code here
@@ -91,26 +75,6 @@ body:
       label: 'Gland Version'
       description: 'What version of Gland are you using?'
       placeholder: 'e.g., 1.0.0'
-
-  - type: input
-    validations:
-      required: true
-    attributes:
-      label: 'Node.js Version'
-      description: 'What version of Node.js are you using?'
-      placeholder: 'e.g., 16.13.0'
-
-  - type: input
-    attributes:
-      label: 'TypeScript Version'
-      description: 'If applicable, what version of TypeScript are you using?'
-      placeholder: 'e.g., 4.5.4'
-
-  - type: textarea
-    attributes:
-      label: 'Environment Information'
-      description: 'Information about your operating system or any other relevant environment details'
-      placeholder: 'OS: Windows 11, Package Manager: npm 8.1.0'
 
   - type: textarea
     attributes:
