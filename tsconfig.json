@@ -13,10 +13,10 @@
     "noImplicitAny": false,
     "noUnusedLocals": false,
     "outDir": "dist",
-    "rootDir": "lib",
+    "rootDir": "src",
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true
   },
-  "include": ["lib/**/*.ts", "tests/**/*.ts", "examples/**/*.ts"],
+  "include": ["src/**/*.ts", "tests/**/*.ts", "examples/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
