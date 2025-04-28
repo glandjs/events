@@ -1,0 +1,19 @@
+{
+  "lockfileVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "@glandjs/events",
+      "dependencies": {
+        "@glandjs/emitter": "^1.1.1",
+      },
+      "devDependencies": {
+        "typescript": "^5.5.4",
+      },
+    },
+  },
+  "packages": {
+    "@glandjs/emitter": ["@glandjs/emitter@1.1.1", "", {}, "sha512-vrRZXaEbnu6UWE0rLi2hcESsMV8XW7Uip5wRCGpxERhakqoUNxxf1krWavzaQmMi9KY7r1BQXYJUz/QGgKy7wg=="],
+
+    "typescript": ["typescript@5.8.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-p1diW6TqL9L07nNxvRMM7hMMw4c5XOo/1ibL4aAIGmSAt9slTE1Xgw5KWuof2uTOvCg9BY7ZRi+GaF+7sfgPeQ=="],
+  }
+}

@@ -41,6 +41,6 @@
     "typescript": "^5.5.4"
   },
   "dependencies": {
-    "@glandjs/emitter": "^1.1.0"
+    "@glandjs/emitter": "^1.1.1"
   }
 }
