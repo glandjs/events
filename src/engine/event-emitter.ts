@@ -1,8 +1,8 @@
 import { EventEmitter as GlandEventEmitter } from '@glandjs/emitter';
 import { EventWatcher } from './event-watcher';
-import type { EventOptions, EventRecord, EventType, GetListenerMethod, Listener, OffMethod, OnceMethod, OnMethod, ShutdownMethod } from '../common';
+import type { EventOptions, EventRecord, EventType, GetListenerMethod, Listener, OnceMethod, OnMethod, ShutdownMethod, WatchMethod } from '../common';
 
-export class EventEmitter<TEvents extends EventRecord> implements OnMethod<TEvents>, OnceMethod<TEvents>, GetListenerMethod<TEvents>, ShutdownMethod {
+export class EventEmitter<TEvents extends EventRecord> implements OnMethod<TEvents>, OnceMethod<TEvents>, GetListenerMethod<TEvents>, ShutdownMethod, WatchMethod<TEvents> {
   private emitter: GlandEventEmitter;
   private watcher: EventWatcher<TEvents>;
   private defaultOptions: EventOptions = {
