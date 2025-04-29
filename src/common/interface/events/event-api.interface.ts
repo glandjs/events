@@ -35,3 +35,6 @@ export interface ShutdownMethod {
 export interface BroadcastMethod<TEvents extends EventRecord> {
   broadcast<K extends keyof TEvents & string>(event: K, payload: TEvents[K], options?: EventOptions): number;
 }
+export interface WatchMethod<TEvents extends EventRecord> {
+  watch<K extends keyof TEvents & EventType>(event: K, timeoutMs?: number): Promise<TEvents[K]>;
+}
