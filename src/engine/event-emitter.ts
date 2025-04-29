@@ -60,7 +60,7 @@ export class EventEmitter<TEvents extends EventRecord> implements OnMethod<TEven
     }
   }
   public shutdown(): void {
-    this.watcher.dispose();
+    this.watcher.shutdown();
   }
 
   public once<K extends keyof TEvents & EventType>(event: K, listener: Listener<TEvents[K]>): this;

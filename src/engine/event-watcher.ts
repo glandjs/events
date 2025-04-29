@@ -1,4 +1,5 @@
-export class EventWatcher<TEvents extends Record<string, any>> {
+import { WatchMethod, type ShutdownMethod } from '../common';
+export class EventWatcher<TEvents extends Record<string, any>> implements WatchMethod<TEvents>, ShutdownMethod {
   private waitingEvents: Map<
     string,
     Array<{
@@ -57,8 +58,7 @@ export class EventWatcher<TEvents extends Record<string, any>> {
       this.waitingEvents.delete(eventName);
     }
   }
-
-  public dispose(): void {
+  public shutdown(): void {
     for (const waiters of this.waitingEvents.values()) {
       for (const waiter of waiters) {
         clearTimeout(waiter.timer);
