@@ -1,8 +1,8 @@
 import { EventEmitter as GlandEventEmitter } from '@glandjs/emitter';
 import { EventWatcher } from './event-watcher';
-import type { EventOptions, EventRecord, EventType, Listener } from '../common';
+import type { EventOptions, EventRecord, EventType, GetListenerMethod, Listener, OffMethod, OnceMethod, OnMethod, ShutdownMethod } from '../common';
 
-export class EventEmitter<TEvents extends EventRecord> {
+export class EventEmitter<TEvents extends EventRecord> implements OnMethod<TEvents>, OnceMethod<TEvents>, GetListenerMethod<TEvents>, ShutdownMethod {
   private emitter: GlandEventEmitter;
   private watcher: EventWatcher<TEvents>;
   private defaultOptions: EventOptions = {
@@ -42,14 +42,11 @@ export class EventEmitter<TEvents extends EventRecord> {
     return this.watcher.watch(event, timeout || this.defaultOptions.timeout);
   }
 
-  public off<K extends keyof TEvents & EventType>(event: K): this;
-  public off<K extends keyof TEvents & EventType>(event: K, listener: Listener<TEvents[K]>): this;
-  public off<K extends keyof TEvents & EventType>(event: K, listener?: Listener<TEvents[K]>): this {
+  public off<K extends keyof TEvents & EventType>(event: K, listener?: Listener<TEvents[K]>): void {
     this.emitter.off(event, listener);
-    return this;
   }
 
-  public emit<K extends keyof TEvents & EventType>(event: K, payload: TEvents[K], options?: EventOptions): this {
+  public emit<K extends keyof TEvents & EventType>(event: K, payload: TEvents[K], options?: EventOptions): void {
     this.watcher.onEmit(event, payload);
 
     this.emitter.emit(event, payload);
@@ -61,11 +58,8 @@ export class EventEmitter<TEvents extends EventRecord> {
         throw err;
       });
     }
-
-    return this;
   }
-
-  public dispose(): void {
+  public shutdown(): void {
     this.watcher.dispose();
   }
 
