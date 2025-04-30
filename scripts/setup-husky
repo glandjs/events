@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+npm run husky
+
+chmod +x .husky/pre-commit
+chmod +x .husky/commit-msg
+chmod +x .husky/check-gpg
+
+echo "✅ Husky hooks installed and configured successfully!"
+echo "ℹ️ The following hooks are now active:"
+echo "  - pre-commit: Runs lint-staged to format code before commit"
+echo "  - commit-msg: Enforces conventional commit format"
+echo "  - check-gpg: Ensures commits are signed with GPG"
