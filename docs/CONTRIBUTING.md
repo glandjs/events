@@ -117,31 +117,9 @@ _PR Checklist:_
 
 ## Commit Message Format
 
-Use conventional commits:
+Please follow our [commit message guidelines](./COMMIT_GUIDE.md) based on Conventional Commits.
 
-```
-<type>(<scope>): <short summary>
-
-<body>
-
-<footer>
-```
-
-**Types:**
-
-- `feat`: new feature
-- `fix`: bug fix
-- `perf`: performance improvement
-- `refactor`: code change without feature or fix
-- `test`: adding or updating tests
-- `docs`: documentation only
-- `chore`: maintenance tasks
-
-**Example:**
-
-```
-perf(broker): reduce listener lookup overhead
-```
+Following a consistent commit format helps with changelogs, automation, and code readability.
 
 ---
 
