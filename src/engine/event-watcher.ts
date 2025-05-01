@@ -58,13 +58,14 @@ export class EventWatcher<TEvents extends Record<string, any>> implements WatchM
       this.waitingEvents.delete(eventName);
     }
   }
+
   public shutdown(): void {
-    for (const waiters of this.waitingEvents.values()) {
+    for (const [eventName, waiters] of this.waitingEvents.entries()) {
       for (const waiter of waiters) {
         clearTimeout(waiter.timer);
+        waiter.reject(new Error(`Watcher shutdown before '${eventName}' was emitted`));
       }
     }
-
     this.waitingEvents.clear();
   }
 }

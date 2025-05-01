@@ -12,11 +12,13 @@
     "lib": ["ES2020"],
     "noImplicitAny": false,
     "noUnusedLocals": false,
+    "declaration": true,
+
     "outDir": "dist",
     "rootDir": "src",
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts", "examples/**/*.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

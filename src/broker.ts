@@ -195,16 +195,16 @@ export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents>
 
   public send<K extends keyof TEvents & EventType>(event: K, target: Broker<TEvents>, options?: EventOptions): this {
     const eventId = crypto.randomUUID();
-
     target.emit(
       event,
-      null as any,
+      // @ts-ignore
+      null,
       {
         ...options,
         _eventId: eventId,
         _sourceId: this._id,
         _propagate: false,
-      } as any,
+      },
     );
 
     return this;

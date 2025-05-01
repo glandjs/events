@@ -1,4 +1,4 @@
-import { EventBroker } from '../src';
+import { EventBroker } from '../dist';
 
 interface BrokerEvents {
   'message:new': string;

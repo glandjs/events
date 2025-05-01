@@ -1,9 +1,10 @@
 {
   "name": "@glandjs/events",
-  "version": "2.0.0-alpha",
+  "version": "1.0.0-beta-1",
   "description": "A fast, zero‑dependency event broker and message bus for building scalable, event‑driven applications.",
   "type": "module",
-  "module": "dist/index",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
   "homepage": "https://github.com/glandjs/events#readme",
   "author": "Mahdi <bitsgenix@gmail.com>",
   "license": "MIT",
@@ -14,9 +15,7 @@
   "bugs": {
     "url": "https://github.com/glandjs/events/issues"
   },
-  "files": [
-    "dist/"
-  ],
+  "files": ["dist/"],
   "sideEffects": false,
   "engines": {
     "bun": ">=1.0.0",
@@ -32,26 +31,19 @@
     "dev": "bun --watch src/index.ts --outdir dist --format esm --target bun",
     "watch:types": "tsc --watch --preserveWatchOutput --emitDeclarationOnly",
     "lint-staged": "lint-staged",
-    "test:unit": "bun test ./tests/unit --clearCache",
-    "test:integration": "bun test ./tests/integration --clearCache",
-    "test": "npm run test:unit && npm run test:integration",
-    "coverage": "bun test ./tests --coverage",
+    "test:integration": "bun test ./tests/integration/*",
+    "test": "npm run test:integration",
+    "coverage": "bun test ./tests/**/*.spec.ts --coverage",
     "typecheck": "tsc --noEmit",
     "husky": "husky init",
-    "prepare": "chmod +x scripts/setup-husky & ./scripts/setup-husky"
+    "release:pack": "npm pack",
+    "release": "npm publish",
+    "prepare": "husky"
   },
   "publishConfig": {
     "access": "public"
   },
-  "keywords": [
-    "glandjs",
-    "event",
-    "event-broker",
-    "event-emitter",
-    "message-bus",
-    "eds",
-    "typescript"
-  ],
+  "keywords": ["glandjs", "event", "event-broker", "event-emitter", "eds", "typescript", "bun", "gland"],
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
     "@types/bun": "latest",
