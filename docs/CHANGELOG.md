@@ -77,3 +77,10 @@ This release introduces a solid and extensible foundation for building high-perf
 ### Migration Notes
 
 This is the **first stable release**, so there are no breaking changes from previous versions. However, if you are upgrading from a pre-release (such as `1.0.0-alpha` or `1.0.0-beta`), please review any changes in method signatures, file organization, or type definitions, as these have been fine-tuned for better consistency and type safety.
+
+## [1.0.0-beta] – 2025-05-03
+
+### Chore
+
+- **Package**: Added `exports` field to `package.json` for proper ESM resolution.
+- **Version**: Bumped from `1.0.0-beta-1` to `1.0.0-beta`.

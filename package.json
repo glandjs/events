@@ -1,10 +1,16 @@
 {
   "name": "@glandjs/events",
-  "version": "1.0.0-beta-1",
+  "version": "1.0.0-beta",
   "description": "A fast, zero‑dependency event broker and message bus for building scalable, event‑driven applications.",
   "type": "module",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "homepage": "https://github.com/glandjs/events#readme",
   "author": "Mahdi <bitsgenix@gmail.com>",
   "license": "MIT",
