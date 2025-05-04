@@ -84,3 +84,16 @@ This is the **first stable release**, so there are no breaking changes from prev
 
 - **Package**: Added `exports` field to `package.json` for proper ESM resolution.
 - **Version**: Bumped from `1.0.0-beta-1` to `1.0.0-beta`.
+
+## [1.0.2-beta] – 2025-05-04
+
+### Changed
+
+- **package.json**
+  - Added `"main": "./dist/index.js"` so that CommonJS consumers can `require()` the package.
+  - Expanded `"exports"` to include both `"import"` and `"require"` targets, ensuring proper resolution in ESM and CJS contexts.
+  - Removed Bun‑only build pipeline; build now runs purely via `tsc`.
+  - Switched `module` to `CommonJS` and `target` to `ES2021` for broader runtime support.
+  - Simplified compiler options, removing Bun‑specific and unused flags.
+  - Consolidated to a single `"build": "tsc"` entry, dropping the separate `bun build` step.
+  - Ensures both `.js` and `.d.ts` outputs land in `dist/`.
