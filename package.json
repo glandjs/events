@@ -1,19 +1,19 @@
 {
   "name": "@glandjs/events",
-  "version": "1.0.0-beta",
+  "version": "1.0.2-beta",
   "description": "A fast, zero‑dependency event broker and message bus for building scalable, event‑driven applications.",
-  "type": "module",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
-  },
   "homepage": "https://github.com/glandjs/events#readme",
   "author": "Mahdi <bitsgenix@gmail.com>",
   "license": "MIT",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/glandjs/events.git"
@@ -21,8 +21,9 @@
   "bugs": {
     "url": "https://github.com/glandjs/events/issues"
   },
-  "files": ["dist/"],
-  "sideEffects": false,
+  "files": [
+    "dist/"
+  ],
   "engines": {
     "bun": ">=1.0.0",
     "typescript": ">=5"
@@ -33,7 +34,7 @@
   "scripts": {
     "build:js": "bun build src/index.ts --outdir dist --format esm --target bun --minify",
     "build:types": "tsc --emitDeclarationOnly --outDir dist",
-    "build": "npm run build:js && npm run build:types",
+    "build": "tsc",
     "dev": "bun --watch src/index.ts --outdir dist --format esm --target bun",
     "watch:types": "tsc --watch --preserveWatchOutput --emitDeclarationOnly",
     "lint-staged": "lint-staged",
@@ -49,7 +50,16 @@
   "publishConfig": {
     "access": "public"
   },
-  "keywords": ["glandjs", "event", "event-broker", "event-emitter", "eds", "typescript", "bun", "gland"],
+  "keywords": [
+    "glandjs",
+    "event",
+    "event-broker",
+    "event-emitter",
+    "eds",
+    "typescript",
+    "bun",
+    "gland"
+  ],
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
     "@types/bun": "latest",
@@ -60,6 +70,6 @@
     "typescript": "^5.5.4"
   },
   "dependencies": {
-    "@glandjs/emitter": "^1.1.1"
+    "@glandjs/emitter": "^1.1.4"
   }
 }
