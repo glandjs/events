@@ -25,4 +25,10 @@ export interface BrokerOptions {
    * @description Default timeout for async operations in ms.
    */
   defaultTimeout?: number;
+
+  /**
+   * @default 5
+   * @description Maximum number of listeners allowed per event.
+   */
+  maxListeners?: number;
 }

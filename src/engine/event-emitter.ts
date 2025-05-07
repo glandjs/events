@@ -1,6 +1,6 @@
 import { EventEmitter as GlandEventEmitter } from '@glandjs/emitter';
 import { EventWatcher } from './event-watcher';
-import type { EventOptions, EventRecord, EventType, GetListenerMethod, Listener, OnceMethod, OnMethod, ShutdownMethod, WatchMethod } from '../common';
+import type { EventOptions, EventPayload, EventRecord, EventReturn, Events, EventType, GetListenerMethod, Listener, OnceMethod, OnMethod, ShutdownMethod, WatchMethod } from '../common';
 
 export class EventEmitter<TEvents extends EventRecord> implements OnMethod<TEvents>, OnceMethod<TEvents>, GetListenerMethod<TEvents>, ShutdownMethod, WatchMethod<TEvents> {
   private emitter: GlandEventEmitter;
@@ -11,16 +11,17 @@ export class EventEmitter<TEvents extends EventRecord> implements OnMethod<TEven
     defaultValue: null,
   };
 
-  constructor(separator?: string, cacheSize?: number, timeout = 1000) {
+  private maxListeners: number;
+  constructor(separator?: string, cacheSize?: number, timeout = 1000, maxListeners = 5) {
     this.emitter = new GlandEventEmitter(separator, cacheSize);
     this.watcher = new EventWatcher<TEvents>(timeout);
+    this.maxListeners = maxListeners;
     this.defaultOptions.timeout = timeout;
   }
 
-  public on<K extends keyof TEvents & EventType>(event: K, listener: Listener<TEvents[K]>): this;
-  public on<K extends keyof TEvents & EventType>(event: K, listener: Listener<TEvents[K]>, options: EventOptions & { watch?: false }): this;
-  public on<K extends keyof TEvents & EventType>(event: K, listener: null | Listener<TEvents[K]>, options: EventOptions & { watch: true }): Promise<TEvents[K]>;
-  public on<K extends keyof TEvents & EventType>(event: K, listener: Listener<TEvents[K]>, options?: EventOptions): this | Promise<TEvents[K]> {
+  public on<K extends Events<TEvents>>(event: K, listener: Listener<EventPayload<TEvents, K>, void>, options?: EventOptions): this;
+  public on<K extends Events<TEvents>>(event: K, listener: null | Listener<EventPayload<TEvents, K>, void>, options: EventOptions & { watch: true }): Promise<EventPayload<TEvents, K>>;
+  public on<K extends Events<TEvents>>(event: K, listener: Listener<EventPayload<TEvents, K>, void> | null, options?: EventOptions & { watch?: boolean }): this | Promise<EventPayload<TEvents, K>> {
     const mergedOptions = { ...this.defaultOptions, ...options };
 
     if (mergedOptions.watch) {
@@ -34,16 +35,26 @@ export class EventEmitter<TEvents extends EventRecord> implements OnMethod<TEven
         },
       );
     }
-    this.emitter.on(event, listener);
+    if (!listener) {
+      throw new Error(`Listener cannot be null unless 'watch: true' is explicitly set in options.`);
+    }
+
+    const currentListeners = this.getListener(event);
+    if (currentListeners.length >= this.maxListeners) {
+      throw new Error(`Maximum listeners (${this.maxListeners}) exceeded for event '${event}'`);
+    }
+
+    this.emitter.on(event, listener!);
     return this;
   }
 
-  public watch<K extends keyof TEvents & EventType>(event: K, timeout?: number): Promise<TEvents[K]> {
-    return this.watcher.watch(event, timeout || this.defaultOptions.timeout);
+  public watch<K extends Events<TEvents>>(event: K, timeoutMs?: number): Promise<EventPayload<TEvents, K>> {
+    return this.watcher.watch(event, timeoutMs || this.defaultOptions.timeout);
   }
 
-  public off<K extends keyof TEvents & EventType>(event: K, listener?: Listener<TEvents[K]>): void {
+  public off<K extends Events<TEvents>>(event: K, listener?: Listener<EventPayload<TEvents, K>, void>): this {
     this.emitter.off(event, listener);
+    return this;
   }
 
   public emit<K extends keyof TEvents & EventType>(event: K, payload: TEvents[K], options?: EventOptions): void {
@@ -63,15 +74,19 @@ export class EventEmitter<TEvents extends EventRecord> implements OnMethod<TEven
     this.watcher.shutdown();
   }
 
-  public once<K extends keyof TEvents & EventType>(event: K, listener: Listener<TEvents[K]>): this;
-  public once<K extends keyof TEvents & EventType>(event: K, listener: Listener<TEvents[K]> | null, options: EventOptions & { watch: true }): Promise<TEvents[K]>;
-  public once<K extends keyof TEvents & EventType>(event: K, listener: Listener<TEvents[K]> | null, options?: EventOptions): this | Promise<TEvents[K]> {
+  public once<K extends Events<TEvents>>(event: K, listener: Listener<EventPayload<TEvents, K>, void>): this;
+  public once<K extends Events<TEvents>>(event: K, listener: Listener<EventPayload<TEvents, K>, void> | null, options: EventOptions & { watch: true }): Promise<EventPayload<TEvents, K>>;
+  public once<K extends Events<TEvents>>(event: K, listener: Listener<EventPayload<TEvents, K>, void> | null, options?: EventOptions & { watch?: boolean }): this | Promise<EventPayload<TEvents, K>> {
     const mergedOptions = { ...this.defaultOptions, ...options };
 
     if (mergedOptions.watch) {
       return this.watcher.watch(event, mergedOptions.timeout);
     }
 
+    const currentListeners = this.getListener(event);
+    if (currentListeners.length >= this.maxListeners) {
+      throw new Error(`Maximum listeners (${this.maxListeners}) exceeded for event '${String(event)}'`);
+    }
     const wrapper: Listener<TEvents[K]> = (payload) => {
       // remove after first call
       this.emitter.off(event, wrapper);
@@ -82,7 +97,7 @@ export class EventEmitter<TEvents extends EventRecord> implements OnMethod<TEven
     return this;
   }
 
-  public getListener<K extends keyof TEvents & EventType, TReturn extends any>(event: K): Listener<TEvents[K], TReturn>[] {
+  public getListener<K extends Events<TEvents>>(event: K): Listener<EventPayload<TEvents, K>, EventReturn<TEvents, K>>[] {
     const parts = event.split(this.emitter['spliter']);
     let node = this.emitter['tree'];
 
