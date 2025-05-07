@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test';
-import { EventEmitter } from '../../src/engine/event-emitter';
+import { EventEmitter } from '../../src';
 
 type Payloads = {
   test: string;

@@ -1,11 +1,11 @@
-import { EventBroker } from '../src';
+import { EventBroker, type IOEvent } from '../src';
 
-interface AuthEvents {
+type AuthEvents = {
   'auth:login:attempt': { username: string };
   'auth:login:success': { userId: string; username: string; token: string };
   'auth:login:failure': { username: string; reason: string };
   'auth:logout': { userId: string };
-}
+};
 
 class AuthService {
   private events = new EventBroker<AuthEvents>({ name: 'broker' });
@@ -21,7 +21,10 @@ class AuthService {
   private setupEventHandlers() {
     this.events.on('auth:login:attempt', (data) => {
       console.log(`[${new Date().toISOString()}] Login attempt: ${data.username}`);
+      return { f: 'hello world' };
     });
+    const hello = this.events.call('auth:login:attempt', { username: 'hello world' }, 'first');
+    console.log('hello', hello);
 
     this.events.on('auth:login:success', (data) => {
       console.log(`[${new Date().toISOString()}] Login successful: ${data.username}`);

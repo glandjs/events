@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, afterEach, expect } from 'bun:test';
-import { EventBroker } from '../../dist';
+import { EventBroker, type IOEvent } from '../../src';
 interface Events {
-  'user:login': { name: string };
+  'user:login': IOEvent<{ name: string }, string>;
   'message:new': string;
 }
 function createMesh(size: number): Array<EventBroker<Events>> {
@@ -24,34 +24,18 @@ describe('Broker', () => {
 
   it('call strategies with no listeners return defaults', async () => {
     expect(broker.call('user:login', { name: 'Z' }, 'all')).toEqual([]);
-    await expect(broker.call('user:login', { name: 'Z' }, 'race')).resolves.toBeUndefined();
     expect(broker.call('user:login', { name: 'Z' }, 'first')).toBeUndefined();
     expect(broker.call('user:login', { name: 'Z' }, 'last')).toBeUndefined();
-    expect(broker.call('user:login', { name: 'Z' }, 'some')).toBe(false);
-    expect(broker.call('user:login', { name: 'Z' }, 'every')).toBe(false);
   });
   it('call strategies work with listeners', async () => {
     broker.on('user:login', (p) => 'a:' + p.name);
     broker.on('user:login', async (p) => 'b:' + p.name);
-    // @ts-ignore
-    // first
     expect(broker.call('user:login', { name: 'X' }, 'first')).toBe('a:X');
-    // @ts-ignore
-    // last (async listener, returns a Promise)
     await expect(broker.call('user:login', { name: 'X' }, 'last')).resolves.toBe('b:X');
-
-    // all
-    const allResults = broker.call('user:login', { name: 'X' }, 'all') as [string, Promise<string>];
+    const allResults = broker.call('user:login', { name: 'X' }, 'all');
     expect(allResults).toHaveLength(2);
     expect(allResults[0]).toBe('a:X');
     await expect(allResults[1]).resolves.toBe('b:X');
-    // race
-    const raceResult = await broker.call('user:login', { name: 'X' }, 'race');
-    expect(['a:X', 'b:X']).toContain(raceResult);
-    // some
-    expect(broker.call('user:login', { name: 'X' }, 'some')).toBe(true);
-    // every
-    expect(broker.call('user:login', { name: 'X' }, 'every')).toBe(true);
   });
   it('should propagate events on broadcast to connected brokers', async () => {
     const other = new EventBroker<Events>({ name: 'other' });

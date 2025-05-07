@@ -1,4 +1,4 @@
-import { EventBroker } from '../dist';
+import { EventBroker } from '../src';
 
 interface AppEvents {
   'user:login': { id: string; username: string };
