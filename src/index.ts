@@ -4,4 +4,5 @@
  * MIT Licensed
  */
 export * from './broker';
+export * from './engine/event-emitter';
 export * from './common';

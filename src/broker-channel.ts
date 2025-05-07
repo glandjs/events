@@ -1,8 +1,9 @@
-import type { Broker, BrokerOptions, Channel, ChannelEvents, EventOptions, EventRecord, EventType, Listener } from './common';
+import type { EventBroker } from './broker';
+import type { BrokerOptions, Channel, ChannelEvents, EventOptions, EventPayload, EventRecord, EventReturn, EventType, Listener, Events } from './common';
 
-export class BrokerChannel<TChannelEvents extends EventRecord, TPrefix extends string> implements Channel<TChannelEvents> {
+export class BrokerChannel<TEvents extends EventRecord, TPrefix extends EventType> implements Channel<TEvents> {
   constructor(
-    private readonly _broker: Broker<any>,
+    private readonly _broker: EventBroker<any>,
     private readonly _name: string,
     private readonly _delimiter: BrokerOptions['delimiter'],
   ) {}
@@ -12,64 +13,62 @@ export class BrokerChannel<TChannelEvents extends EventRecord, TPrefix extends s
   public get name() {
     return this._name;
   }
-  private _createEventName<K extends keyof TChannelEvents & EventType>(event: K): `${TPrefix}${EventType}${K}` {
+  private _createEventName<K extends Events<TEvents>>(event: K): `${TPrefix}${EventType}${K}` {
     return `${this.name}${this._delimiter}${event}` as `${TPrefix}${EventType}${K}`;
   }
-  public on<K extends keyof TChannelEvents & EventType>(event: K, listener: Listener<TChannelEvents[K]>): this;
-  public on<K extends keyof TChannelEvents & EventType>(event: K, listener: Listener<TChannelEvents[K]>, options: EventOptions & { watch?: false }): this;
-  public on<K extends keyof TChannelEvents & EventType>(event: K, listener: Listener<TChannelEvents[K]> | null, options: EventOptions & { watch: true }): Promise<TChannelEvents[K]>;
-  public on<K extends keyof TChannelEvents & EventType>(...args: any[]): this | Promise<TChannelEvents[K]> {
-    const [event, listener, options] = args;
-    const namespacedEvent = this._createEventName(event);
-    const result = this._broker.on(namespacedEvent, listener, options);
+  public on<K extends Events<TEvents>>(event: K, listener: Listener<EventPayload<TEvents, K>, void>, options?: EventOptions): this;
+  public on<K extends Events<TEvents>>(event: K, listener: null | Listener<EventPayload<TEvents, K>, void>, options: EventOptions & { watch: true }): Promise<EventPayload<TEvents, K>>;
+  public on<K extends Events<TEvents>>(event: K, listener: Listener<EventPayload<TEvents, K>, void> | null, options?: EventOptions & { watch?: boolean }): this | Promise<EventPayload<TEvents, K>> {
+    const namespaced = this._createEventName(event);
+    // @ts-ignore
+    const result = this._broker.on(namespaced, listener, options);
     return typeof result === 'object' && result instanceof Promise ? result : this;
   }
-  public once<K extends keyof TChannelEvents & EventType>(event: K, listener: Listener<TChannelEvents[K]>): this;
-  public once<K extends keyof TChannelEvents & EventType>(event: K, listener: Listener<TChannelEvents[K]> | null, options: EventOptions & { watch: true }): Promise<TChannelEvents[K]>;
-  public once<K extends keyof TChannelEvents & EventType>(...args: any[]): this | Promise<TChannelEvents[K]> {
-    const [event, listener, options] = args;
-    const namespacedEvent = this._createEventName(event);
-    const result = this._broker.once(namespacedEvent, listener, options);
+  public once<K extends Events<TEvents>>(event: K, listener: Listener<EventPayload<TEvents, K>, void>): this;
+  public once<K extends Events<TEvents>>(event: K, listener: Listener<EventPayload<TEvents, K>, void> | null, options: EventOptions & { watch: true }): Promise<EventPayload<TEvents, K>>;
+  public once<K extends Events<TEvents>>(event: K, listener: Listener<EventPayload<TEvents, K>, void> | null, options?: EventOptions & { watch?: boolean }): this | Promise<EventPayload<TEvents, K>> {
+    const namespaced = this._createEventName(event);
+    // @ts-ignore
+    const result = this._broker.once(namespaced, listener, options);
     return typeof result === 'object' && result instanceof Promise ? result : this;
   }
-  public off<K extends keyof TChannelEvents & EventType>(event: K, listener?: Listener<TChannelEvents[K]>): this {
-    const namespacedEvent = this._createEventName(event);
-    this._broker.off(namespacedEvent, listener);
+  public off<K extends Events<TEvents>>(event: K, listener?: Listener<EventPayload<TEvents, K>, void>): this {
+    const namespaced = this._createEventName(event);
+    this._broker.off(namespaced, listener);
     return this;
   }
-  public emit<K extends keyof TChannelEvents & EventType>(event: K, payload: TChannelEvents[K], options?: EventOptions): this {
-    const namespacedEvent = this._createEventName(event);
-    this._broker.emit(namespacedEvent, payload, options);
+  public emit<K extends Events<TEvents>>(event: K, payload: EventPayload<TEvents, K>, options?: EventOptions): this {
+    const namespaced = this._createEventName(event);
+    this._broker.emit(namespaced, payload, options);
     return this;
   }
+  // @ts-ignore
+  public call<K extends Events<TEvents>>(event: K, data: EventPayload<TEvents, K>, strategy?: 'first' | 'last'): EventReturn<TEvents, K> | undefined;
 
-  public call<K extends keyof TChannelEvents & EventType, TReturn extends any>(event: K, data: TChannelEvents[K], strategy: 'first' | 'last'): TReturn | undefined;
-  public call<K extends keyof TChannelEvents & EventType, TReturn extends any>(event: K, data: TChannelEvents[K], strategy: 'all'): TReturn[];
-  public call<K extends keyof TChannelEvents & EventType, TReturn extends any>(event: K, data: TChannelEvents[K], strategy: 'race'): Promise<TReturn>;
-  public call<K extends keyof TChannelEvents & EventType>(event: K, data: TChannelEvents[K], strategy: 'some' | 'every'): boolean;
-  public call<K extends keyof TChannelEvents & EventType>(event: K, data: TChannelEvents[K], strategy: 'first' | 'last' | 'all' | 'race' | 'some' | 'every') {
-    const namespacedEvent = this._createEventName(event);
-    return this._broker.call(namespacedEvent, data, strategy as any) as any;
+  public call<K extends Events<TEvents>>(event: K, data: EventPayload<TEvents, K>, strategy?: 'all'): EventReturn<TEvents, K>[];
+  public call<K extends Events<TEvents>>(event: K, data: EventPayload<TEvents, K>, strategy?: 'first' | 'last' | 'all') {
+    const mode = strategy ?? 'first';
+    const namespaced = this._createEventName(event);
+    // @ts-ignore: We know that _broker.call() matches the expected return type for the strategy.
+    return this._broker.call(namespaced, data, mode);
   }
 
-  public getListener<K extends keyof TChannelEvents & EventType, TReturn extends any>(event: K): Listener<TChannelEvents[K], TReturn>[] {
-    const namespacedEvent = this._createEventName(event);
-    return this._broker.getListener(namespacedEvent);
+  public getListener<K extends Events<TEvents>>(event: K): Listener<EventPayload<TEvents, K>, EventReturn<TEvents, K>>[] {
+    const namespaced = this._createEventName(event);
+    return this._broker.getListener(namespaced) as Listener<EventPayload<TEvents, K>, EventReturn<TEvents, K>>[];
   }
 
-  public channel<TNestedPrefix extends string, TNestedEvents extends ChannelEvents<TNestedPrefix, TChannelEvents> = ChannelEvents<TNestedPrefix, TChannelEvents>>(
-    name: TNestedPrefix,
-  ): Channel<TNestedEvents> {
+  public channel<TNestedPrefix extends string, TNestedEvents extends ChannelEvents<TNestedPrefix, TEvents> = ChannelEvents<TNestedPrefix, TEvents>>(name: TNestedPrefix): Channel<TNestedEvents> {
     const nestedName = `${this.name}${this._delimiter}${name}`;
     return this._broker.channel(nestedName);
   }
 
-  public broadcast<K extends keyof TChannelEvents & EventType>(event: K, payload: TChannelEvents[K], options?: EventOptions): this {
-    const namespacedEvent = this._createEventName(event);
-    this._broker.broadcast(namespacedEvent, payload, options);
+  public broadcast<K extends Events<TEvents>>(event: K, payload: EventPayload<TEvents, K>, options?: EventOptions): this {
+    const namespaced = this._createEventName(event);
+    this._broker.broadcast(namespaced, payload, options);
     return this;
   }
-  public watch<K extends keyof TChannelEvents & EventType>(event: K, timeoutMs?: number): Promise<TChannelEvents[K]> {
+  public watch<K extends Events<TEvents>>(event: K, timeoutMs?: number): Promise<EventPayload<TEvents, K>> {
     return this._broker.watch(event, timeoutMs);
   }
 }

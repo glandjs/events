@@ -1,4 +1,4 @@
-import { WatchMethod, type ShutdownMethod } from '../common';
+import { WatchMethod, type EventPayload, type Events, type EventType, type ShutdownMethod } from '../common';
 export class EventWatcher<TEvents extends Record<string, any>> implements WatchMethod<TEvents>, ShutdownMethod {
   private waitingEvents: Map<
     string,
@@ -10,21 +10,21 @@ export class EventWatcher<TEvents extends Record<string, any>> implements WatchM
   > = new Map();
   constructor(private readonly timeout: number) {}
 
-  public watch<K extends keyof TEvents & string>(eventName: K, timeoutMs?: number): Promise<TEvents[K]> {
+  watch<K extends Events<TEvents>>(event: K, timeoutMs?: number): Promise<EventPayload<TEvents, K>> {
     const timeout = timeoutMs ?? this.timeout;
 
     return new Promise<TEvents[K]>((resolve, reject) => {
-      if (!this.waitingEvents.has(eventName)) {
-        this.waitingEvents.set(eventName, []);
+      if (!this.waitingEvents.has(event)) {
+        this.waitingEvents.set(event, []);
       }
 
       const timer = setTimeout(() => {
-        this.cleanupEvent(eventName, timer);
-        console.warn(`Event '${eventName}' timed out after ${timeout}ms`);
-        reject(new Error(`Event '${eventName}' timed out after ${timeout}ms`));
+        this.cleanupEvent(event, timer);
+        console.warn(`Event '${event}' timed out after ${timeout}ms`);
+        reject(new Error(`Event '${event}' timed out after ${timeout}ms`));
       }, timeout);
 
-      this.waitingEvents.get(eventName)!.push({
+      this.waitingEvents.get(event)!.push({
         resolve,
         reject,
         timer,
@@ -32,8 +32,8 @@ export class EventWatcher<TEvents extends Record<string, any>> implements WatchM
     });
   }
 
-  public onEmit<K extends keyof TEvents & string>(eventName: K, payload: TEvents[K]): void {
-    const waiters = this.waitingEvents.get(eventName);
+  public onEmit<K extends Events<TEvents>>(event: K, payload: TEvents[K]): void {
+    const waiters = this.waitingEvents.get(event);
 
     if (!waiters || waiters.length === 0) {
       return;
@@ -42,11 +42,11 @@ export class EventWatcher<TEvents extends Record<string, any>> implements WatchM
       clearTimeout(waiter.timer);
       waiter.resolve(payload);
     }
-    this.waitingEvents.delete(eventName);
+    this.waitingEvents.delete(event);
   }
 
-  private cleanupEvent<K extends keyof TEvents & string>(eventName: K, timer: NodeJS.Timeout): void {
-    const waiters = this.waitingEvents.get(eventName);
+  private cleanupEvent<K extends keyof TEvents & string>(event: K, timer: NodeJS.Timeout): void {
+    const waiters = this.waitingEvents.get(event);
     if (!waiters) return;
 
     const index = waiters.findIndex((w) => w.timer === timer);
@@ -55,15 +55,15 @@ export class EventWatcher<TEvents extends Record<string, any>> implements WatchM
     }
 
     if (waiters.length === 0) {
-      this.waitingEvents.delete(eventName);
+      this.waitingEvents.delete(event);
     }
   }
 
   public shutdown(): void {
-    for (const [eventName, waiters] of this.waitingEvents.entries()) {
+    for (const [event, waiters] of this.waitingEvents.entries()) {
       for (const waiter of waiters) {
         clearTimeout(waiter.timer);
-        waiter.reject(new Error(`Watcher shutdown before '${eventName}' was emitted`));
+        waiter.reject(new Error(`Watcher shutdown before '${event}' was emitted`));
       }
     }
     this.waitingEvents.clear();

@@ -1,8 +1,23 @@
 import { BrokerChannel } from './broker-channel';
-import type { Broker, BrokerId, BrokerOptions, Channel, ChannelEvents, ConnectionOptions, EmitOptions, EventOptions, EventRecord, EventType, Listener } from './common';
+import type {
+  Broker,
+  BrokerId,
+  BrokerOptions,
+  Channel,
+  ChannelEvents,
+  ConnectionOptions,
+  EmitOptions,
+  EventOptions,
+  EventPayload,
+  EventRecord,
+  EventReturn,
+  Events,
+  EventType,
+  Listener,
+} from './common';
 import { EventEmitter } from './engine/event-emitter';
 interface EventTrace {
-  eventId: string;
+  eventId: EventType;
   sourceId: BrokerId;
   visited: Set<BrokerId>;
   timestamp: number;
@@ -10,16 +25,16 @@ interface EventTrace {
 export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents> {
   private readonly _id: BrokerId;
   private readonly _emitter: EventEmitter<TEvents>;
-  private readonly _connections: Map<BrokerId, Broker<any>> = new Map();
+  private readonly _connections: Map<BrokerId, EventBroker<any>> = new Map();
   private readonly _channels: Map<EventType, Channel<any>> = new Map();
-  private readonly _eventTraces: Map<string, EventTrace> = new Map();
+  private readonly _eventTraces: Map<EventType, EventTrace> = new Map();
   constructor(public options: BrokerOptions) {
     this.options = this.normalizeOptions(options);
     this._id = options.name;
-    this._emitter = new EventEmitter(this.options.delimiter, this.options.cacheSize, this.options.defaultTimeout);
+    this._emitter = new EventEmitter(this.options.delimiter, this.options.cacheSize, this.options.defaultTimeout, this.options.maxListeners);
   }
 
-  private trackEvent(eventId: string, sourceId: BrokerId): EventTrace {
+  private trackEvent(eventId: EventType, sourceId: BrokerId): EventTrace {
     let trace = this._eventTraces.get(eventId);
 
     if (!trace) {
@@ -36,7 +51,7 @@ export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents>
 
     return trace;
   }
-  private hasProcessedEvent(eventId: string): boolean {
+  private hasProcessedEvent(eventId: EventType): boolean {
     const trace = this._eventTraces.get(eventId);
     return trace ? trace.visited.has(this._id) : false;
   }
@@ -47,16 +62,16 @@ export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents>
       delimiter: options.delimiter ?? ':',
       ignoreErrors: options.ignoreErrors ?? false,
       defaultTimeout: options.defaultTimeout ?? 1000,
+      maxListeners: options.maxListeners ?? 5,
     };
   }
   public get id() {
     return this._id;
   }
 
-  public on<K extends keyof TEvents & EventType>(event: K, listener: Listener<TEvents[K]>): this;
-  public on<K extends keyof TEvents & EventType>(event: K, listener: Listener<TEvents[K]>, options: EventOptions & { watch?: false }): this;
-  public on<K extends keyof TEvents & EventType>(event: K, listener: null | Listener<TEvents[K]>, options: EventOptions & { watch: true }): Promise<TEvents[K]>;
-  public on<K extends keyof TEvents & EventType>(event: K, listener: Listener<TEvents[K]>, options?: EventOptions): this | Promise<TEvents[K]> {
+  public on<K extends Events<TEvents>>(event: K, listener: Listener<EventPayload<TEvents, K>, void>, options?: EventOptions): this;
+  public on<K extends Events<TEvents>>(event: K, listener: null | Listener<EventPayload<TEvents, K>, void>, options: EventOptions & { watch: true }): Promise<EventPayload<TEvents, K>>;
+  public on<K extends Events<TEvents>>(event: K, listener: Listener<EventPayload<TEvents, K>, void> | null, options?: EventOptions & { watch?: boolean }): this | Promise<EventPayload<TEvents, K>> {
     // @ts-ignore
     const result = this._emitter.on(event, listener, options);
     if (result instanceof Promise) {
@@ -64,11 +79,11 @@ export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents>
     }
     return this;
   }
-  public off<K extends keyof TEvents & EventType>(event: K, listener?: Listener<TEvents[K]> | undefined): this {
+  public off<K extends Events<TEvents>>(event: K, listener?: Listener<EventPayload<TEvents, K>, void>): this {
     this._emitter.off(event, listener);
     return this;
   }
-  public emit<K extends keyof TEvents & EventType>(event: K, payload: TEvents[K], options?: EmitOptions): this {
+  public emit<K extends Events<TEvents>>(event: K, payload: EventPayload<TEvents, K>, options?: EmitOptions): this {
     const eventId = options?._eventId || crypto.randomUUID();
     const sourceId = options?._sourceId || this._id;
     const propagate = options?._propagate ?? false;
@@ -76,6 +91,7 @@ export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents>
     if (!this.hasProcessedEvent(eventId)) {
       this.trackEvent(eventId, sourceId);
 
+      // @ts-ignore
       this._emitter.emit(event, payload, options);
 
       if (propagate) {
@@ -102,9 +118,9 @@ export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents>
 
     return this;
   }
-  public once<K extends keyof TEvents & EventType>(event: K, listener: Listener<TEvents[K]>): this;
-  public once<K extends keyof TEvents & EventType>(event: K, listener: Listener<TEvents[K]> | null, options: EventOptions & { watch: true }): Promise<TEvents[K]>;
-  public once<K extends keyof TEvents & EventType>(event: K, listener: Listener<TEvents[K]>, options?: EventOptions): this | Promise<TEvents[K]> {
+  public once<K extends Events<TEvents>>(event: K, listener: Listener<EventPayload<TEvents, K>, void>): this;
+  public once<K extends Events<TEvents>>(event: K, listener: Listener<EventPayload<TEvents, K>, void> | null, options: EventOptions & { watch: true }): Promise<EventPayload<TEvents, K>>;
+  public once<K extends Events<TEvents>>(event: K, listener: Listener<EventPayload<TEvents, K>, void> | null, options?: EventOptions & { watch?: boolean }): this | Promise<EventPayload<TEvents, K>> {
     // @ts-ignore
     const result = this._emitter.once(event, listener, options);
     if (result instanceof Promise) {
@@ -112,34 +128,27 @@ export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents>
     }
     return this;
   }
-  public watch<K extends keyof TEvents & EventType>(event: K, timeoutMs?: number): Promise<TEvents[K]> {
+  public watch<K extends Events<TEvents>>(event: K, timeoutMs?: number): Promise<EventPayload<TEvents, K>> {
     return this._emitter.watch(event, timeoutMs);
   }
 
-  public getListener<K extends keyof TEvents & EventType, TReturn extends any>(event: K): Listener<TEvents[K], TReturn>[] {
+  public getListener<K extends Events<TEvents>>(event: K): Listener<EventPayload<TEvents, K>, EventReturn<TEvents, K>>[] {
     return this._emitter.getListener(event);
   }
-  public call<K extends keyof TEvents & EventType, TReturn extends any>(event: K, data: TEvents[K], strategy: 'first' | 'last'): TReturn | undefined;
-  public call<K extends keyof TEvents & EventType, TReturn extends any>(event: K, data: TEvents[K], strategy: 'all'): TReturn[];
-  public call<K extends keyof TEvents & EventType, TReturn extends any>(event: K, data: TEvents[K], strategy: 'race'): Promise<TReturn>;
-  public call<K extends keyof TEvents & EventType>(event: K, data: TEvents[K], strategy: 'some' | 'every'): boolean;
-  public call<K extends keyof TEvents & EventType>(event: K, data: TEvents[K], strategy: 'first' | 'last' | 'all' | 'race' | 'some' | 'every') {
+  public call<K extends Events<TEvents>>(event: K, data: EventPayload<TEvents, K>, strategy?: 'first' | 'last'): EventReturn<TEvents, K> | undefined;
+
+  public call<K extends Events<TEvents>>(event: K, data: EventPayload<TEvents, K>, strategy?: 'all'): EventReturn<TEvents, K>[];
+
+  public call<K extends Events<TEvents>>(event: K, data: EventPayload<TEvents, K>, strategy?: 'first' | 'last' | 'all') {
     const listeners = this.getListener(event);
 
     if (!listeners.length) {
       // Return appropriate default values based on strategy
       if (strategy === 'all') return [];
-      if (strategy === 'race') return Promise.resolve(undefined);
-      if (strategy === 'some' || strategy === 'every') return false;
       return undefined;
     }
 
     switch (strategy) {
-      case 'first': {
-        const firstListener = listeners[0];
-        return firstListener ? firstListener(data) : undefined;
-      }
-
       case 'last': {
         const lastListener = listeners[listeners.length - 1];
         return lastListener ? lastListener(data) : undefined;
@@ -148,25 +157,10 @@ export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents>
       case 'all': {
         return listeners.map((listener) => listener(data));
       }
-
-      case 'race': {
-        const promises = listeners.map((listener) => {
-          const result = listener(data);
-          return result instanceof Promise ? result : Promise.resolve(result);
-        });
-        return Promise.race(promises);
-      }
-
-      case 'some': {
-        return listeners.some((listener) => !!listener(data));
-      }
-
-      case 'every': {
-        return listeners.every((listener) => !!listener(data));
-      }
-
+      case 'first':
       default:
-        throw new Error(`Unsupported strategy: ${strategy}`);
+        const firstListener = listeners[0];
+        return firstListener ? firstListener(data) : undefined;
     }
   }
 
@@ -180,7 +174,7 @@ export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents>
     this._channels.set(name, channel);
     return channel;
   }
-  public broadcast<K extends keyof TEvents & EventType>(event: K, payload: TEvents[K], options?: EventOptions): this {
+  public broadcast<K extends Events<TEvents>>(event: K, payload: EventPayload<TEvents, K>, options?: EventOptions): this {
     const eventId = crypto.randomUUID();
 
     this.emit(event, payload, {
@@ -193,7 +187,7 @@ export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents>
     return this;
   }
 
-  public send<K extends keyof TEvents & EventType>(event: K, target: Broker<TEvents>, options?: EventOptions): this {
+  public send<K extends Events<TEvents>>(event: K, target: EventBroker<TEvents>, options?: EventOptions): this {
     const eventId = crypto.randomUUID();
     target.emit(
       event,
@@ -209,7 +203,7 @@ export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents>
 
     return this;
   }
-  public connectTo<TOtherEvents extends EventRecord>(broker: Broker<TOtherEvents>, options?: ConnectionOptions): this {
+  public connectTo<TOtherEvents extends EventRecord>(broker: EventBroker<TOtherEvents>, options?: ConnectionOptions): this {
     if (!broker || !broker.id) {
       throw new Error('Invalid broker');
     }
@@ -223,7 +217,6 @@ export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents>
     this._connections.set(broker.id, broker);
 
     if (typeof broker.connectTo === 'function' && !broker.isConnected(this._id)) {
-      // @ts-ignore
       broker.connectTo(this, options);
     }
 
@@ -236,6 +229,7 @@ export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents>
             _sourceId: this._id,
             _propagate: false,
           });
+          return undefined;
         });
       }
     }
@@ -257,7 +251,7 @@ export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents>
     return this._connections.has(brokerId);
   }
 
-  public emitTo<K extends keyof TEvents & EventType>(brokerId: BrokerId, event: K, payload: TEvents[K], options?: EventOptions): boolean {
+  public emitTo<K extends Events<TEvents>>(brokerId: BrokerId, event: K, payload: TEvents[K], options?: EventOptions): boolean {
     const broker = this._connections.get(brokerId);
 
     if (!broker) {
@@ -275,7 +269,7 @@ export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents>
     return true;
   }
 
-  public createConnections<TOtherEvents extends EventRecord>(brokers: Array<Broker<TOtherEvents>>, options?: ConnectionOptions): this {
+  public createConnections<TOtherEvents extends EventRecord>(brokers: Array<EventBroker<TOtherEvents>>, options?: ConnectionOptions): this {
     for (const broker of brokers) {
       this.connectTo(broker, options);
     }
