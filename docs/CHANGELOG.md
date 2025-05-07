@@ -97,3 +97,38 @@ This is the **first stable release**, so there are no breaking changes from prev
   - Simplified compiler options, removing Bun‑specific and unused flags.
   - Consolidated to a single `"build": "tsc"` entry, dropping the separate `bun build` step.
   - Ensures both `.js` and `.d.ts` outputs land in `dist/`.
+
+## [1.0.0] – 2025-05-08
+
+### Added
+
+- **EventEmitter**
+
+  - Added `maxListeners` parameter to constructor and `BrokerOptions` interface to limit the maximum number of listeners per event (default: 5)
+  - Implemented listener count validation in `on()` and `once()` methods to prevent potential memory leaks
+  - Added error handling when listener limit is exceeded, with clear error messages indicating the event name and limit
+
+- **Types**
+
+  - Added `IOEvent<TPayload, TReturn>` generic type for explicit payload and return type definition
+  - Added `Events<TEvents>` as an alias for `keyof TEvents & string` for better type inference
+  - Added `EventPayload<TEvents, K>` and `EventReturn<TEvents, K>` helper types for improved type safety
+
+- **CallMethod**
+  - Remove `race`-`some`-`every` strategies:
+
+### Changed
+
+- **Broker**
+
+  - Improved type definitions across all methods for better TypeScript inference
+  - Enhanced method signatures to use new type system with `EventPayload` and `EventReturn`
+
+- **EventEmitter**
+  - Refactored internal code to use new type definitions
+  - Improved error messages with more context about the failure reason
+
+### Fixed
+
+- Fixed potential memory leak by enforcing maximum listener count
+- Improved type safety across the codebase by using more specific type definitions
