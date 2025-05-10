@@ -42,11 +42,11 @@ export class BrokerChannel<TEvents extends EventRecord, TPrefix extends EventTyp
     this._broker.emit(namespaced, payload, options);
     return this;
   }
-  // @ts-ignore
-  public call<K extends Events<TEvents>>(event: K, data: EventPayload<TEvents, K>, strategy?: 'first' | 'last'): EventReturn<TEvents, K> | undefined;
 
-  public call<K extends Events<TEvents>>(event: K, data: EventPayload<TEvents, K>, strategy?: 'all'): EventReturn<TEvents, K>[];
-  public call<K extends Events<TEvents>>(event: K, data: EventPayload<TEvents, K>, strategy?: 'first' | 'last' | 'all') {
+  // @ts-ignore
+  public call<K extends Events<TEvents>>(event: K, data: EventPayload<TEvents, K>): EventReturn<TEvents, K>;
+  public call<K extends Events<TEvents>>(event: K, data: EventPayload<TEvents, K>, strategy: 'all'): EventReturn<TEvents, K>[];
+  public call<K extends Events<TEvents>>(event: K, data: EventPayload<TEvents, K>, strategy?: 'all') {
     const mode = strategy ?? 'first';
     const namespaced = this._createEventName(event);
     // @ts-ignore: We know that _broker.call() matches the expected return type for the strategy.

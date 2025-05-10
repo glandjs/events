@@ -1,3 +1,4 @@
+import { generateUUID } from './utils';
 import { BrokerChannel } from './broker-channel';
 import type {
   Broker,
@@ -25,9 +26,9 @@ interface EventTrace {
 export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents> {
   private readonly _id: BrokerId;
   private readonly _emitter: EventEmitter<TEvents>;
-  private readonly _connections: Map<BrokerId, EventBroker<any>> = new Map();
-  private readonly _channels: Map<EventType, Channel<any>> = new Map();
-  private readonly _eventTraces: Map<EventType, EventTrace> = new Map();
+  private readonly _connections = new Map<BrokerId, EventBroker<any>>();
+  private readonly _channels = new Map<EventType, Channel<any>>();
+  private readonly _eventTraces = new Map<EventType, EventTrace>();
   constructor(public options: BrokerOptions) {
     this.options = this.normalizeOptions(options);
     this._id = options.name;
@@ -84,7 +85,7 @@ export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents>
     return this;
   }
   public emit<K extends Events<TEvents>>(event: K, payload: EventPayload<TEvents, K>, options?: EmitOptions): this {
-    const eventId = options?._eventId || crypto.randomUUID();
+    const eventId = options?._eventId || generateUUID();
     const sourceId = options?._sourceId || this._id;
     const propagate = options?._propagate ?? false;
 
@@ -135,32 +136,23 @@ export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents>
   public getListener<K extends Events<TEvents>>(event: K): Listener<EventPayload<TEvents, K>, EventReturn<TEvents, K>>[] {
     return this._emitter.getListener(event);
   }
-  public call<K extends Events<TEvents>>(event: K, data: EventPayload<TEvents, K>, strategy?: 'first' | 'last'): EventReturn<TEvents, K> | undefined;
 
-  public call<K extends Events<TEvents>>(event: K, data: EventPayload<TEvents, K>, strategy?: 'all'): EventReturn<TEvents, K>[];
-
-  public call<K extends Events<TEvents>>(event: K, data: EventPayload<TEvents, K>, strategy?: 'first' | 'last' | 'all') {
+  public call<K extends Events<TEvents>>(event: K, data: EventPayload<TEvents, K>): EventReturn<TEvents, K>;
+  public call<K extends Events<TEvents>>(event: K, data: EventPayload<TEvents, K>, strategy: 'all'): EventReturn<TEvents, K>[];
+  public call<K extends Events<TEvents>>(event: K, data: EventPayload<TEvents, K>, strategy?: 'all') {
     const listeners = this.getListener(event);
 
     if (!listeners.length) {
-      // Return appropriate default values based on strategy
-      if (strategy === 'all') return [];
-      return undefined;
+      return [];
     }
 
     switch (strategy) {
-      case 'last': {
-        const lastListener = listeners[listeners.length - 1];
-        return lastListener ? lastListener(data) : undefined;
-      }
-
       case 'all': {
         return listeners.map((listener) => listener(data));
       }
-      case 'first':
       default:
         const firstListener = listeners[0];
-        return firstListener ? firstListener(data) : undefined;
+        return firstListener(data);
     }
   }
 
@@ -175,7 +167,7 @@ export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents>
     return channel;
   }
   public broadcast<K extends Events<TEvents>>(event: K, payload: EventPayload<TEvents, K>, options?: EventOptions): this {
-    const eventId = crypto.randomUUID();
+    const eventId = generateUUID();
 
     this.emit(event, payload, {
       ...options,
@@ -188,7 +180,7 @@ export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents>
   }
 
   public send<K extends Events<TEvents>>(event: K, target: EventBroker<TEvents>, options?: EventOptions): this {
-    const eventId = crypto.randomUUID();
+    const eventId = generateUUID();
     target.emit(
       event,
       // @ts-ignore
@@ -225,7 +217,7 @@ export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents>
         this.on(event, (payload) => {
           // @ts-ignore
           broker.emit(event, payload, {
-            _eventId: crypto.randomUUID(),
+            _eventId: generateUUID(),
             _sourceId: this._id,
             _propagate: false,
           });
@@ -258,7 +250,7 @@ export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents>
       return false;
     }
 
-    const eventId = crypto.randomUUID();
+    const eventId = generateUUID();
     broker.emit(event, payload, {
       ...options,
       // @ts-ignore
@@ -280,7 +272,77 @@ export class EventBroker<TEvents extends EventRecord> implements Broker<TEvents>
     }
     return this;
   }
+  public getConnections(): BrokerId[] {
+    return Array.from(this._connections.keys());
+  }
 
+  public getConnection(brokerId: BrokerId): EventBroker<any> | undefined {
+    return this._connections.get(brokerId);
+  }
+
+  public disconnectAll(): this {
+    for (const brokerId of this._connections.keys()) {
+      this.disconnect(brokerId);
+    }
+    return this;
+  }
+  public callTo<K extends Events<TEvents>>(brokerId: BrokerId, event: K, data: EventPayload<TEvents, K>): EventReturn<TEvents, K>;
+  public callTo<K extends Events<TEvents>>(brokerId: BrokerId, event: K, data: EventPayload<TEvents, K>, strategy: 'all'): EventReturn<TEvents, K>[];
+  public callTo<K extends Events<TEvents>>(brokerId: BrokerId, event: K, data: EventPayload<TEvents, K>, strategy?: 'all'): EventReturn<TEvents, K> | EventReturn<TEvents, K>[] {
+    const broker = this._connections.get(brokerId);
+
+    if (!broker) {
+      return [];
+    }
+
+    return broker.call(event, data, strategy!) as EventReturn<TEvents, K> | EventReturn<TEvents, K>[];
+  }
+  public broadcastTo<K extends Events<TEvents>>(brokerIds: BrokerId[], event: K, payload: EventPayload<TEvents, K>, options?: EventOptions): this {
+    const eventId = generateUUID();
+
+    for (const brokerId of brokerIds) {
+      const broker = this._connections.get(brokerId);
+      if (broker) {
+        broker.emit(event, payload, {
+          ...options,
+          // @ts-ignore
+          _eventId: eventId,
+          _sourceId: this._id,
+          _propagate: false,
+        });
+      }
+    }
+
+    return this;
+  }
+
+  public findBroker(brokerId: BrokerId, maxDepth: number = 3): EventBroker<any> | undefined {
+    if (this.id === brokerId) {
+      return this;
+    }
+
+    const directConnection = this._connections.get(brokerId);
+    if (directConnection) {
+      return directConnection;
+    }
+
+    if (maxDepth <= 0) {
+      return undefined;
+    }
+
+    for (const [, connectedBroker] of this._connections.entries()) {
+      if (connectedBroker.id === this.id) {
+        continue;
+      }
+
+      const found = connectedBroker.findBroker(brokerId, maxDepth - 1);
+      if (found) {
+        return found;
+      }
+    }
+
+    return undefined;
+  }
   public shutdown(): void {
     this._emitter.shutdown();
     this._connections.clear();

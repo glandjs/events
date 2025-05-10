@@ -11,14 +11,12 @@ const broker5 = new EventBroker<BrokerEvents>({ name: 'broker-5' });
 const broker6 = new EventBroker<BrokerEvents>({ name: 'broker-6' });
 const allBrokers = [broker2, broker3, broker4, broker5, broker6];
 broker1.createConnections(allBrokers);
-
 console.log('Mesh network established');
 
 broker1.on('message:new', (message) => {
   console.log(`[${broker1.id}] Received message: ${message}`);
 });
-
-broker2.on('message:new', (message) => {
++broker2.on('message:new', (message) => {
   console.log(`[${broker2.id}] Received message: ${message}`);
 });
 
@@ -37,6 +35,7 @@ broker5.on('message:new', (message) => {
 broker6.on('message:new', (message) => {
   console.log(`[${broker6.id}] Received message: ${message}`);
 });
+broker3.broadcastTo([broker1.id, broker2.id], 'message:new', 'Hello from Broker 3!');
 broker4.broadcast('message:new', 'Hello from Broker 4 to the entire mesh network!');
 console.log(`\nSending direct message from ${broker2.id} to ${broker5.id}...`);
 broker2.emitTo(broker5.id, 'message:new', 'This is a direct message from Broker 2 to Broker 5 only');

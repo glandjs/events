@@ -24,14 +24,12 @@ describe('Broker', () => {
 
   it('call strategies with no listeners return defaults', async () => {
     expect(broker.call('user:login', { name: 'Z' }, 'all')).toEqual([]);
-    expect(broker.call('user:login', { name: 'Z' }, 'first')).toBeUndefined();
-    expect(broker.call('user:login', { name: 'Z' }, 'last')).toBeUndefined();
   });
   it('call strategies work with listeners', async () => {
     broker.on('user:login', (p) => 'a:' + p.name);
     broker.on('user:login', async (p) => 'b:' + p.name);
-    expect(broker.call('user:login', { name: 'X' }, 'first')).toBe('a:X');
-    await expect(broker.call('user:login', { name: 'X' }, 'last')).resolves.toBe('b:X');
+    expect(broker.call('user:login', { name: 'X' })).toBe('a:X');
+    await expect(broker.call('user:login', { name: 'X' })).resolves.toBe('b:X');
     const allResults = broker.call('user:login', { name: 'X' }, 'all');
     expect(allResults).toHaveLength(2);
     expect(allResults[0]).toBe('a:X');
