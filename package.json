@@ -1,6 +1,6 @@
 {
   "name": "@glandjs/events",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A fast, zero‑dependency event broker and message bus for building scalable, event‑driven applications.",
   "homepage": "https://github.com/glandjs/events#readme",
   "author": "Mahdi <bitsgenix@gmail.com>",

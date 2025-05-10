@@ -132,3 +132,33 @@ This is the **first stable release**, so there are no breaking changes from prev
 
 - Fixed potential memory leak by enforcing maximum listener count
 - Improved type safety across the codebase by using more specific type definitions
+
+## [1.1.0] - 2025-05-10
+
+### Added
+
+- A new **UUID generation utility** (`generateUUID`) to replace runtime‑specific APIs and ensure consistent ID creation across environments.
+- Broker mesh management methods:
+
+  - **`getConnections`** & **`getConnection`** for inspecting active connections.
+  - **`disconnectAll`** to tear down all peer connections in one call.
+  - **`callTo`** for invoking an action on a specific broker by ID.
+  - **`broadcastTo`** for sending an event to a selected subset of brokers.
+  - **`findBroker`** to locate a broker in the mesh—directly or via multi‑hop.
+
+### Changed
+
+- **Simplified the `call` API**:
+
+  - The default invocation (no strategy) now returns the **first** listener’s result.
+  - Passing the `'all'` strategy returns an **array** of all listener results.
+  - Removed explicit support for `'first'` and `'last'` parameters.
+
+- **Refactored method overloads** in broker and channel classes to match the new call signature.
+- **Replaced** all `crypto.randomUUID()` calls with the new `generateUUID()` utility for platform‑agnostic behavior.
+- **Streamlined private state** initialization and TypeScript declarations for stronger type safety.
+
+### Removed
+
+- Deprecated the explicit `'first'`/`'last'` call strategies.
+- Eliminated obsolete API overloads and unused code paths to reduce maintenance burden.
