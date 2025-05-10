@@ -28,8 +28,6 @@ describe('Broker', () => {
   it('call strategies work with listeners', async () => {
     broker.on('user:login', (p) => 'a:' + p.name);
     broker.on('user:login', async (p) => 'b:' + p.name);
-    const s = broker.call('user:login', { name: 'X' });
-    console.log('S:', s);
     expect(broker.call('user:login', { name: 'X' })).toBe('a:X');
     const allResults = broker.call('user:login', { name: 'X' }, 'all');
     expect(allResults).toHaveLength(2);
