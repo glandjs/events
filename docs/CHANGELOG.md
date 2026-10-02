@@ -1,5 +1,170 @@
 # Changelog
 
+## [2.0.0] – 2026-10-02
+
+A correctness release. Most of what changed here was already promised by the
+documentation — this version makes the code match the docs, and removes a
+signature that could not have worked.
+
+The headline: **`send()` never carried a payload**, and **a channel's `watch()`
+could never settle**. Both are fixed below, and both are breaking.
+
+### Breaking changes
+
+#### `send()` now takes a `payload`
+
+`payload` is a required third argument. In 1.x it was absent from both the
+signature and the forwarding call, so the target always received a literal
+`null`.
+
+```ts
+// 1.x — payload was unreachable
+broker.send('user:login', peer);
+
+// 2.0.0
+broker.send('user:login', peer, { id: 'u1' });
+```
+
+`payload` sits before `options`, so any existing three-argument call that was
+passing `options` in that position must move it.
+
+#### `BrokerChannel.watch()` now namespaces the event name
+
+`user.watch('login')` used to watch the bare name `login` — an event a `user`
+channel can never emit, because a channel only ever writes `user:login`. The
+promise therefore always timed out. It now watches `user:login`, consistent with
+every other method on the channel.
+
+### Fixed
+
+- **`EventEmitter.shutdown()` now removes listeners.** It previously shut down
+  only the watcher, leaving every registration live.
+- **`EventEmitter.off()` now updates the listener registry.** Removals were
+  applied to the underlying emitter but not the bookkeeping, so `getListener()`
+  kept reporting detached listeners and `maxListeners` never freed a slot.
+- **`getListener()` no longer reaches into private fields** of
+  `@glandjs/emitter` (`spliter`, `tree`). Those names are dependency-private and
+  have already changed once; a dependency bump would have silently made
+  `getListener` return zero listeners.
+- **`defaultValue` is now tested with `!== undefined`** rather than truthiness, so
+  `0`, `''`, `false` and `null` work as watcher fallbacks. Previously only a
+  truthy value could be used.
+- **`emit(..., { watch: true })` no longer produces an unhandled rejection** when
+  the watcher it opens times out. The promise is not returned to the caller, so
+  its failure is now swallowed deliberately.
+- **`once(event, null)` outside watch mode now throws**, matching `on`, instead
+  of silently registering nothing.
+- **A `once` wrapper detaches before invoking the listener**, so a re-entrant
+  emit inside the handler cannot run it a second time.
+- **Event-trace dedup is now bounded.** Traces record a `visited` set per
+  correlation id in a FIFO map capped at 4096 entries, so the map can no longer
+  grow for the life of the process.
+- **Automatic forwarding no longer loops.** `ConnectionOptions.events` is now
+  routing state rather than a listener that re-emitted with a fresh id. Because
+  it shares the original correlation id, the return leg is deduped away instead
+  of ping-ponging between two brokers until the stack overflowed. It also no
+  longer consumes listener slots — previously `connectTo` could throw on a
+  broker with a tight `maxListeners` — and it correctly stops on `disconnect`.
+- **`Broker.shutdown()` now clears the event-trace map**, so a reused correlation
+  id is processed again after a restart.
+- **`generateUUID` degrades instead of throwing.** A runtime that exposes
+  `crypto.getRandomValues` but rejects the call now falls through to the
+  `Math.random` tier instead of taking the broker down.
+- **`EventWatcher` no longer writes a `console.warn` on timeout.** The rejection
+  is the contract; a side-channel log line for an expected outcome was noise.
+
+### Added
+
+- **`BrokerChannel` and `EventWatcher` are now exported from the package root.**
+  `BrokerChannel` was previously unreachable to consumers, despite being the
+  documented way to own a namespace.
+- **`BrokerConnection`** — the live link to a peer, plus the events it
+  auto-forwards. Exported from the package root.
+- **`CallStrategy`** — `type CallStrategy = 'all'`, extracted so the strategy
+  argument is named rather than an inline literal.
+- **`BrokerId`** moved into the shared type vocabulary alongside the other
+  identifier types.
+- **`Broker` now defaults its type parameter to `EventRecord`**, so an untyped
+  `Broker` is usable where the mesh cannot know a node's event map in advance.
+- **`EventWatcher.pending`** — the count of unsettled watchers, so a teardown path
+  (or a test) can assert nothing is left holding a timer.
+- **`tsconfig.test.json`** — type-checks `src/` _and_ `tests/` with
+  `noUnusedLocals`, `noUnusedParameters` and `noImplicitOverride`. Previously only
+  `src/` was checked.
+- **New scripts**: `format`, `format:check`, `test:unit`, and `verify`
+  (typecheck + test + format:check). `test` now runs the whole suite instead of
+  only the integration tests.
+
+### Changed
+
+- **Tests are organised into `tests/unit` and `tests/integration`**, with shared
+  fixtures in `tests/helpers.ts`. A `BrokerFactory` centralises teardown so a
+  forgotten `shutdown()` cannot leak an armed timer and keep the test process
+  alive.
+- **Line and function coverage of `src/` is at 100%**, up from a suite that did
+  not exist in this form.
+- Removed every `@ts-ignore` from `src/`.
+- `broadcastTo` now delegates to `emitTo` rather than duplicating the routing
+  logic.
+- Per-call typing tightened across `BrokerChannel`, `EventEmitter` and
+  `EventWatcher` to use `EventPayload<TEvents, K>` rather than `TEvents[K]`, so an
+  `IOEvent` payload is unwrapped at the boundary.
+
+### Documentation
+
+- **New [`docs/api/README.md`](./api/README.md)** — the full API reference. The
+  source JSDoc already linked to this path, but the file did not exist.
+- Corrected the `ChannelMethod` doc, which claimed a `'user'` prefix also claims
+  `'username:verify'`. It does not: `ChannelEvents` **drops** that key rather than
+  re-labelling it, because the match is textual and a channel only ever writes
+  `<name><delimiter><event>`. Verified against the compiler, not assumed.
+- **README** — added an install/usage section and repaired the documentation
+  links, which pointed at `#` and `#/api`.
+- **Quick Start** — rewritten against the current API. The previous version
+  documented a `'every'` call strategy that was removed in 1.1.0 and never
+  existed as of this release.
+- **CONTRIBUTING** — corrected. It listed Node 14 (the package targets Node 18+)
+  and told contributors to run `npm test` and `npm run lint`, the latter of which
+  is not a script in this repository.
+- **Package description** — dropped the "zero-dependency" claim. The package has
+  one runtime dependency, `@glandjs/emitter`.
+
+### Examples
+
+- `mesh-network.ts` — removed a stray `+` that turned a subscription into a unary
+  plus expression. It ran by accident; it was not valid TypeScript.
+- `auth-service.ts` — replaced a `call(..., 'first')` call (a strategy removed in
+  1.1.0, and a compile error) with a real `IOEvent` request/response flow.
+- `basic.ts` — imported from `../dist`, which is gitignored and absent on a fresh
+  clone. Now imports from `../src` like the other examples.
+- `simple.ts` — annotated a parameter that was implicitly `any`.
+
+### Migration
+
+```ts
+// send — payload is now required and sits before options
+broker.send('user:login', peer, { id: 'u1' });
+broker.send('user:login', peer, { id: 'u1' }, { timeout: 100 });
+
+// channel watch — now works; previously always timed out
+const payload = await broker.channel('user').watch('login', 5_000);
+
+// call — 'first' and 'last' were removed in 1.1.0 and are not in 2.0.0 either
+broker.call('user:validate', data); // first listener's result
+broker.call('user:validate', data, 'all'); // every result, in order
+```
+
+Everything else in 1.x keeps working. If you do not call `send()` or a channel's
+`watch()`, this is a drop-in upgrade.
+
+## [1.1.2] – 2025-10-14
+
+- **Chore**: version bump only. No source changes from 1.1.1.
+
+## [1.1.1] – 2025-10-14
+
+- **Chore**: version bump only. No source changes from 1.1.0.
+
 ## [1.0.0-beta-1] – 2025-05-01
 
 This is the first stable release of `@glandjs/events`. It provides a fast, zero-dependency event broker and message bus designed for building scalable, event-driven applications based on a modular and protocol-agnostic architecture.

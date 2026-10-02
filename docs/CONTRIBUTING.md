@@ -1,6 +1,6 @@
 # Contributing to @glandjs/events
 
-Thank you for your interest in contributing to **@glandjs/events**! This package is the core event broker used by Gland and is designed to be fast, lightweight, and dependency‑free. Your contributions help us improve performance, add new features, and ensure reliability.
+Thank you for your interest in contributing to **@glandjs/events**! This package is the core event broker used by Gland and is designed to be fast, lightweight, and transport-agnostic. Your contributions help us improve performance, add new features, and ensure reliability.
 
 ---
 
@@ -16,6 +16,7 @@ Thank you for your interest in contributing to **@glandjs/events**! This package
   - [Feature Requests](#feature-requests)
   - [Submitting Pull Requests](#submitting-pull-requests)
   - [Development Setup](#development-setup)
+  - [Testing Guidelines](#testing-guidelines)
   - [Coding Guidelines](#coding-guidelines)
   - [Commit Message Format](#commit-message-format)
   - [Thank You](#thank-you)
@@ -32,7 +33,8 @@ This project adheres to the [Contributor Covenant](https://www.contributor-coven
 
 ### Prerequisites
 
-- **Node.js** v14 or higher
+- **Bun** v1.0 or higher — the test runner and local script runner
+- **Node.js** v18 or higher — only to run against a built `dist/`; the package itself targets Node 18+, Bun, Deno and browsers
 - **Git** for version control
 - **TypeScript** knowledge (project is written in TS)
 
@@ -45,7 +47,7 @@ This project adheres to the [Contributor Covenant](https://www.contributor-coven
    ```
 2. Install dependencies:
    ```bash
-   npm install
+   bun install
    ```
 
 ---
@@ -80,9 +82,9 @@ _Note:_ For general questions, use [Stack Overflow](https://stackoverflow.com) w
    git checkout -b feat/your-feature
    ```
 2. Make your changes in code and tests.
-3. Run all tests and ensure they pass:
+3. Run the full check — typecheck, tests and formatting — before pushing:
    ```bash
-   npm test
+   bun run verify
    ```
 4. Commit your changes with a clear message (see [Commit Message Format](#commit-message-format)).
 5. Push your branch and open a PR against `main`.
@@ -90,7 +92,7 @@ _Note:_ For general questions, use [Stack Overflow](https://stackoverflow.com) w
 _PR Checklist:_
 
 - Tests for new behavior
-- Linting passes (`npm run lint`)
+- `bun run verify` passes
 - Documentation updated if needed
 - Code aligns with event-driven design
 
@@ -98,10 +100,38 @@ _PR Checklist:_
 
 ## Development Setup
 
-- **Build:** `npm run build`
-- **Lint:** `npm run lint`
-- **Test:** `npm test`
-- **Type-check:** `npm run typecheck`
+| Command                    | Does                                                          |
+| -------------------------- | ------------------------------------------------------------- |
+| `bun run typecheck`        | `tsc --noEmit` over `src/`                                    |
+| `bun run test`             | Full suite                                                    |
+| `bun run test:unit`        | Unit tests only                                               |
+| `bun run test:integration` | Integration tests only                                        |
+| `bun run coverage`         | Full suite with coverage                                      |
+| `bun run format`           | Write formatting                                              |
+| `bun run format:check`     | Check formatting                                              |
+| `bun run verify`           | typecheck + test + format:check — **run this before pushing** |
+| `bun run build`            | Compile to `dist/` with declarations                          |
+
+Type-checking the tests, including the unused-variable and override rules, uses a
+separate project config:
+
+```bash
+npx tsc -p tsconfig.test.json --noEmit
+```
+
+---
+
+## Testing Guidelines
+
+- Tests live in `tests/unit` and `tests/integration`, named `*.spec.ts`.
+- Use `BrokerFactory` from `tests/helpers.ts` to create brokers. It registers each
+  one for teardown, so a forgotten `shutdown()` cannot leak an armed timer and
+  keep the test process alive.
+- A broker holds a listener registry, a connection graph and possibly armed
+  timers, so never construct one directly in a test without the factory.
+- Watchers reject on timeout. Attach a rejection handler in the same tick as the
+  `watch()` call — attaching one later is itself reported as an unhandled
+  rejection. Use the `capture` helper the existing suites use.
 
 ---
 
@@ -109,9 +139,14 @@ _PR Checklist:_
 
 - **Event-Driven First**: Ensure any new API or feature respects EDS principles.
 - **Performance**: Keep overhead minimal and avoid blocking operations.
-- **No External Dependencies**: The package must remain dependency-free.
+- **Minimal Dependencies**: The package has exactly one runtime dependency,
+  `@glandjs/emitter`. Adding another needs a strong reason.
 - **TypeScript**: Fully typed, no `any` unless absolutely necessary.
-- **Tests**: Cover edge cases and error scenarios.
+- **Tests**: Cover edge cases and error scenarios. Aim to keep line and function
+  coverage of `src/` at 100% — it is currently there, and the suite is small
+  enough that it should stay there.
+- **Comment the why**: Comments should explain a non-obvious constraint or a
+  decision, not restate the line below them.
 
 ---
 

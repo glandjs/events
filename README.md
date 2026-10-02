@@ -65,11 +65,57 @@ Events represent the simplest and most flexible form of communication. They remo
 
 ## Documentation
 
-For full documentation on how to use @glandjs/events, check out the following resources:
+- [Quick Start](./docs/Quick_Start.md) — install and first broker
+- [API Reference](./docs/api/README.md) — every public type and method
+- [Examples](./examples) — complete, runnable programs
+- [Contributing](./docs/CONTRIBUTING.md)
+- [Changelog](./docs/CHANGELOG.md)
 
-- [Official Documentation](#)
-- [API Reference](#/api)
-- [Contributing Guide](./docs/CONTRIBUTING.md)
+## Usage
+
+```bash
+npm install @glandjs/events
+```
+
+```ts
+import { EventBroker, type IOEvent } from '@glandjs/events';
+
+type AppEvents = {
+  'user:login': { id: string; username: string };
+  'user:validate': IOEvent<{ name: string }, boolean>;
+};
+
+const broker = new EventBroker<AppEvents>({ name: 'app' });
+
+// Subscribe
+broker.on('user:login', (p) => console.log(p.username));
+broker.emit('user:login', { id: 'u1', username: 'ada' });
+
+// Await an event
+const next = await broker.watch('user:login', 5_000);
+
+// Ask a question, get an answer
+broker.on('user:validate', (d) => d.name.length > 0);
+const valid: boolean = broker.call('user:validate', { name: 'ada' });
+
+// Own a namespace without writing the prefix
+const user = broker.channel('user');
+user.on('login', (p) => audit(p.id));
+user.emit('login', { id: 'u2', username: 'linus' }); // reaches 'user:login'
+```
+
+Brokers can be wired into a mesh. Each broker in the connected component receives
+a broadcast exactly once, however many paths lead there:
+
+```ts
+const http = new EventBroker({ name: 'http' });
+const ws = new EventBroker({ name: 'ws' });
+
+http.createConnections([ws]);
+http.broadcast('config:changed', { version: 2 });
+```
+
+Runs on Node 18+, Bun, Deno and browsers. Type-safe end to end.
 
 ## License
 

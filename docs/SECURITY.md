@@ -8,7 +8,7 @@
 
 ## Security Considerations for @glandjs/events
 
-`@glandjs/events` is a lightweight, dependency-free event system designed to enable modular and scalable communication across application layers. While the package itself does not manage I/O or perform network operations, there are still key security practices to consider:
+`@glandjs/events` is a lightweight, transport-agnostic event system designed to enable modular and scalable communication across application layers. While the package itself does not manage I/O or perform network operations, there are still key security practices to consider:
 
 ### General Guidelines
 
