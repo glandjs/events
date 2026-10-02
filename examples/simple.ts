@@ -49,7 +49,7 @@ ALERT: New friend request
 // =====================================================
 console.log('\n===== Example 3: Unsubscribing =====');
 
-const dataHandler = (data) => {
+const dataHandler = (data: AppEvents['data:loaded']) => {
   console.log(`Data loaded from ${data.source}: ${data.items.length} items`);
 };
 

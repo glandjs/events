@@ -16,7 +16,7 @@ console.log('Mesh network established');
 broker1.on('message:new', (message) => {
   console.log(`[${broker1.id}] Received message: ${message}`);
 });
-+broker2.on('message:new', (message) => {
+broker2.on('message:new', (message) => {
   console.log(`[${broker2.id}] Received message: ${message}`);
 });
 
