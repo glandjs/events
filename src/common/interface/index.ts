@@ -1,4 +1,5 @@
 export * from './broker/broker.interface';
+export * from './broker/broker-connection.interface';
 export * from './broker/broker-connection-options.interface';
 export * from './broker/broker-options.interface';
 
