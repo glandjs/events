@@ -40,7 +40,8 @@ export class EventEmitter<TEvents extends EventRecord> implements OnMethod<TEven
 
   /**
    * @param separator  Segment delimiter for event names. `':'` matches the default in `@glandjs/emitter`.
-   * @param cacheSize  How many event names the underlying emitter keeps resolved. `6` matches its own default.
+   * @param cacheSize  How many event names the underlying emitter keeps resolved. Left undefined this defers to
+   *   `@glandjs/emitter`, whose own default is `64`; `EventBroker` resolves it to `6` before constructing this class.
    * @param timeout    Default timeout in ms for {@link EventEmitter.watch}.
    * @param maxListeners  Listener budget per event name.
    */
